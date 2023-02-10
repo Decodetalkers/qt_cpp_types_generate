@@ -1,15 +1,18 @@
-#include "Test.h"
-#include <QObject>
+#include "generate_signals_test.h"
+
 #include <generate_signals.hpp>
-#include <iostream>
+
 #include <QMetaObject>
+#include <QObject>
+#include <iostream>
+
 Test::Test(QObject *parent)
   : QObject(parent)
 {
 }
 
 int
-main(int argc, char **argv)
+main(void)
 {
     auto qmlstorage = generate_signals::QmlMessageStroage();
     qmlstorage.get_message<Test>();

@@ -22,15 +22,18 @@ shlib = shared_library('generate_signals',
   #gnu_symbol_visibility : 'hidden',
   dependencies: qt6_dep
 )
+
 moc_file_Tst = qt6.compile_moc(
-  headers: files(['Test.h']),
+  headers: files(['generate_signals_test.h']),
   dependencies: qt6_dep
 )
+
 test_exe = executable('generate_signals_test', 'generate_signals_test.cpp',
   moc_file_Tst,
   link_with : shlib,
   dependencies: qt6_dep,
 )
+
 test('generate_signals', test_exe)
 
 
@@ -47,7 +50,7 @@ pkg_mod = import('pkgconfig')
 pkg_mod.generate(
   name : 'generate_signals',
   filebase : 'generate_signals',
-  description : 'Meson sample project.',
+  description : 'generate_signals for cpp files and for qmllsp.',
   subdirs : 'generate_signals',
   libraries : shlib,
   version : '0.1',

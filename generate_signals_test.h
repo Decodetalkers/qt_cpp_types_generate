@@ -5,11 +5,7 @@ class Test : public QObject
 public:
     Test(QObject *parent = nullptr);
 public slots:
-    int mime() {
-        return 1;
-    }
+    int mime() { return 1; }
 signals:
     void test();
 };
-
-
