@@ -13,7 +13,10 @@
 #endif
 #endif
 
+#include <QCoreApplication>
+#include <QFile>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QList>
 #include <QMetaMethod>
@@ -28,14 +31,44 @@ namespace generate_signals {
 template<typename T>
 concept QMetaAble = std::is_base_of_v<QObject, T>;
 
+enum class RegisterType
+{
+    SingleTon,
+    ObjectType,
+    UncreateableType,
+};
+
+[[nodiscard]] inline QString
+registertype_to_string(RegisterType type)
+{
+    switch (type) {
+    case RegisterType::SingleTon:
+        return QString("SingleTon");
+    case RegisterType::ObjectType:
+        return QString("ObjectType");
+    case RegisterType::UncreateableType:
+        return QString("UncreateableType");
+    default:
+        return QString();
+    }
+}
+
 struct QmlMessage
 {
     QString Name;
+    QString Uri;
+    QString ReType;
+    int VersionMajor;
+    int VersionMinor;
     QList<QString> Signals;
     QList<QPair<QString, QString>> Slots;
     QJsonObject toJson() const
     {
         return {{"name", Name},
+                {"uri", Uri},
+                {"type", ReType},
+                {"versionMajor", VersionMajor},
+                {"versionMinor", VersionMinor},
                 {"signals", std::invoke([this]() -> QJsonArray {
                      QJsonArray array;
                      for (auto sig : Signals) {
@@ -60,10 +93,16 @@ public:
     explicit QmlMessageStroage(QObject *parent = nullptr);
     ~QmlMessageStroage() = default;
     template<QMetaAble T>
-    void get_message()
+    void get_message(const char *uri,
+                     const RegisterType rgtype,
+                     int versionMajor,
+                     int versionMinor,
+                     const char *qmlname)
     {
         const QMetaObject metaObj = T::staticMetaObject;
-        QString name              = metaObj.className();
+        const QString name        = QString(qmlname);
+        const QString reUri       = QString(uri);
+        const QString qmltype     = registertype_to_string(rgtype);
         QList<QPair<QString, QString>> slotSignatures;
         QList<QString> signalSignatures;
         for (int methodIdx = metaObj.methodOffset(); methodIdx < metaObj.methodCount();
@@ -82,9 +121,13 @@ public:
             }
         }
         this->messages_.append(QmlMessage{
-          .Name    = name,
-          .Signals = signalSignatures,
-          .Slots   = slotSignatures,
+          .Name         = name,
+          .Uri          = reUri,
+          .ReType       = qmltype,
+          .VersionMajor = versionMajor,
+          .VersionMinor = versionMinor,
+          .Signals      = signalSignatures,
+          .Slots        = slotSignatures,
         });
     }
     [[nodiscard]] QJsonArray toJson() const
@@ -95,6 +138,26 @@ public:
         }
         return array;
     }
+    void writeToFile()
+    {
+        QJsonArray array = toJson();
+        QJsonDocument document;
+        document.setArray(array);
+        auto dir         = qApp->applicationDirPath();
+        QByteArray bytes = document.toJson(QJsonDocument::Indented);
+        QFile file(QString("%1/types.json").arg(dir));
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+            QTextStream iStream(&file);
+            iStream.setEncoding(QStringConverter::Encoding::Utf8);
+            iStream << bytes;
+            file.close();
+            emit quit(1);
+        } else {
+            emit quit(0);
+        }
+    }
+signals:
+    void quit(int);
 
 private:
     QList<QmlMessage> messages_;
