@@ -38,7 +38,7 @@ test('generate_signals', test_exe)
 
 
 # Make this library usable as a Meson subproject.
-generate_signals_dep = declare_dependency(
+generate_signals = declare_dependency(
   sources : 'generate_signals.hpp',
   link_with : shlib)
 
