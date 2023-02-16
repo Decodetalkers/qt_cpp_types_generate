@@ -38,13 +38,15 @@ test('generate_signals', test_exe)
 
 
 # Make this library usable as a Meson subproject.
-generate_signals_dep = declare_dependency(
+generate_signals = declare_dependency(
   sources : 'generate_signals.hpp',
   link_with : shlib)
 
 # Make this library usable from the system's
 # package manager.
 install_headers('generate_signals.hpp', subdir : 'generate_signals')
+
+meson.override_dependency('generate_signals', generate_signals)
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(
